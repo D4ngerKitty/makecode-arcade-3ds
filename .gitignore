@@ -1,0 +1,28 @@
+# Your games and what is built from them stay on your PC (they are other
+# people's projects, and can be rebuilt any time).
+/games/
+/game art/
+/built 3ds games/
+/release/
+
+# Old experiments and safety copies
+/_archive/
+
+# Generated while building
+/player/build/
+/library/build/
+/tools/3ds-libs/
+/player/pxt/
+*.log
+
+# Downloaded tools (not ours to redistribute; see README)
+/tools/bin/
+
+# Bundled copy of the MakeCode compiler (made by tools/make-release.js)
+/mkc/
+
+# Bundled 3DS build tools (made by tools/make-toolchain.js; go in the release only)
+/toolchain/
+
+# Full-length source of the banner sound (only the trimmed library/banner.wav is needed)
+/library/banner-source.wav
