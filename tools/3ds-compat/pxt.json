@@ -1,0 +1,11 @@
+{
+    "name": "3ds-compat",
+    "description": "Fills in APIs that games expect from MakeCode Arcade hardware but that the native build used for the 3DS does not provide.",
+    "dependencies": {
+        "device": "*"
+    },
+    "files": [
+        "pins.ts"
+    ],
+    "supportedTargets": ["arcade"]
+}

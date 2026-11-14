@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MakeCode 3DS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+  :root {
+    --bg: #05081c; --panel: #0d1433; --line: #1e2a5a; --text: #ffffff; --dim: #8088a8;
+    --accent: #ffd840; --good: #6be38b; --bad: #ff7b7b;
+    --pixel: "Press Start 2P", ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+  header { padding: 20px 24px; border-bottom: 2px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; }
+  h1 { font: 16px/1.4 var(--pixel); margin: 0; }
+  h1 span { color: var(--accent); }
+  h2 { font: 12px/1.4 var(--pixel); margin: 0 0 14px; color: var(--dim); }
+  #status { color: var(--dim); font-size: 14px; }
+  #status b { color: var(--text); }
+  main { padding: 20px 24px 60px; max-width: 1200px; margin: 0 auto; display: grid; gap: 24px; }
+  section { background: var(--panel); border: 2px solid var(--line); border-radius: 6px; padding: 18px; }
+  input, textarea { width: 100%; background: var(--bg); color: var(--text); border: 2px solid var(--line); border-radius: 4px;
+    padding: 8px 10px; font: inherit; }
+  input:focus, textarea:focus { outline: none; border-color: var(--dim); }
+  textarea { resize: vertical; min-height: 60px; }
+  button { background: var(--line); color: var(--text); border: 2px solid var(--line); border-radius: 4px; padding: 8px 14px;
+    font: 11px/1.4 var(--pixel); cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: var(--dim); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row > input { flex: 1; }
+  #log { margin-top: 14px; background: #000; color: #b8c0e0; border-radius: 4px; padding: 10px 12px; font: 12px/1.45 Consolas, monospace;
+    white-space: pre-wrap; max-height: 260px; overflow: auto; display: none; }
+  #logTitle { margin-top: 14px; font-size: 14px; display: none; }
+  .ok { color: var(--good); } .fail { color: var(--bad); }
+  #games { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  .game { border: 2px solid var(--line); border-radius: 6px; padding: 14px; display: grid; gap: 8px; background: var(--bg); }
+  .top { display: flex; gap: 12px; }
+  .art { width: 96px; height: 96px; flex: none; border: 2px solid var(--line); display: grid; place-items: center; color: var(--dim);
+    font: 28px var(--pixel); background: var(--bg); }
+  .art img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+  .meta { flex: 1; display: grid; gap: 6px; min-width: 0; }
+  .id { color: var(--dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  label { font-size: 12px; color: var(--dim); display: grid; gap: 3px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .actions input[type=number] { width: 80px; }
+  .note { font-size: 12px; color: var(--dim); min-height: 18px; }
+  .badge { font-size: 11px; padding: 1px 6px; border-radius: 3px; background: var(--line); color: var(--dim); }
+  .badge.built { color: var(--good); }
+  .help { color: var(--dim); font-size: 14px; margin: 0 0 12px; }
+  #disclaimer { position: fixed; inset: 0; background: rgba(5, 8, 28, .92); display: grid; place-items: center; z-index: 10; padding: 16px; }
+  #disclaimer .box { max-width: 520px; background: var(--panel); border: 2px solid var(--accent); border-radius: 6px; padding: 24px; }
+  #disclaimer h2 { color: var(--accent); }
+  #disclaimer p { margin: 0 0 14px; }
+  body.agreed #disclaimer { display: none; }
+  #offline { display: none; background: var(--bad); color: var(--bg); padding: 12px 24px; font-weight: 600; }
+  body.offline #offline { display: block; }
+  body.offline main { opacity: .4; pointer-events: none; }
+  @media (max-width: 600px) { main, header { padding-left: 16px; padding-right: 16px; } .two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="disclaimer" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle">
+  <div class="box">
+    <h2 id="disclaimerTitle">Unofficial app</h2>
+    <p>Makecode Arcade on 3ds is an unofficial fan project. It is <b>not</b> made by, affiliated with, or endorsed by Microsoft or Microsoft MakeCode.</p>
+    <p class="help">MakeCode and Microsoft are trademarks of Microsoft Corporation. Games belong to the people who made them.</p>
+    <button class="primary" id="agree">I understand</button>
+  </div>
+</div>
+<div id="offline">The MakeCode 3DS app is not running, so nothing here works right now. Start it again, then reload this page.</div>
+<header>
+  <h1>MakeCode Arcade <span>on 3DS</span></h1>
+  <div id="status">Starting...</div>
+</header>
+<main>
+  <section id="setup" style="display:none; border-color: var(--accent)">
+    <h2 style="color: var(--accent)">One-time setup</h2>
+    <p class="help" style="color: var(--text)">To build games for the 3DS, this PC needs the free <b>devkitPro</b> 3DS tools. You only do this once.</p>
+    <ol class="help" style="color: var(--text); line-height: 1.8">
+      <li>Click <b>Get the installer</b>. Your web browser opens devkitPro's download page; download <b>devkitProUpdater</b> (the .exe file).</li>
+      <li>Run it. When it asks which parts to install, tick <b>3DS Development</b>. Keep the install folder as <b>C:\devkitPro</b>.</li>
+      <li>When it has finished, click <b>Check again</b>.</li>
+    </ol>
+    <div class="actions">
+      <button class="primary" id="getInstaller">Get the installer</button>
+      <button id="checkAgain">Check again</button>
+    </div>
+    <div class="note" id="setupNote"></div>
+  </section>
+
+  <section>
+    <h2>Add a game</h2>
+    <p class="help">Paste a MakeCode Arcade share link (or a GitHub link). It is downloaded, built for the 3DS and put in the library.</p>
+    <div class="row">
+      <input id="link" placeholder="https://arcade.makecode.com/S12345-67890-12345-67890" autocomplete="off">
+      <button class="primary" id="addBtn">Add game</button>
+    </div>
+    <div id="logTitle"></div>
+    <div id="log"></div>
+  </section>
+
+  <section>
+    <h2>Your games</h2>
+    <p class="help">Edit the details shown in the 3DS library, give games a picture (a PNG; square pixel art works best), or rebuild them. Separate several authors or tags with commas; each author and each tag gets a folder on the 3DS, and a game made by several people appears in each of their folders.</p>
+    <div id="games">Loading...</div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function api(path, options) {
+  let r;
+  try {
+    r = await fetch(path, options);
+  } catch (e) {
+    document.body.classList.add("offline");
+    throw new Error("The app is not running.");
+  }
+  document.body.classList.remove("offline");
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+// ---- the build log: one job at a time is shown -------------------------------------
+let watching = null;
+async function watchJob(job, onDone) {
+  watching = job.id;
+  $("#logTitle").style.display = $("#log").style.display = "block";
+  $("#logTitle").textContent = job.title + "...";
+  $("#logTitle").className = "";
+  for (;;) {
+    const j = await api("/api/jobs/" + job.id);
+    if (watching === job.id) {
+      const log = $("#log"), atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
+      log.textContent = j.log || "";
+      if (atEnd) log.scrollTop = log.scrollHeight;
+    }
+    if (j.done) {
+      if (watching === job.id) {
+        $("#logTitle").textContent = j.title + (j.ok ? " - done" : " - failed (see below)");
+        $("#logTitle").className = j.ok ? "ok" : "fail";
+      }
+      if (onDone) onDone(j.ok);
+      return j.ok;
+    }
+    await new Promise(r => setTimeout(r, 700));
+  }
+}
+
+// ---- games ---------------------------------------------------------------------
+async function loadGames() {
+  const games = await api("/api/games");
+  $("#games").innerHTML = games.length ? "" : "<p class='help'>No games yet: add one above.</p>";
+  for (const g of games) $("#games").appendChild(gameCard(g));
+}
+
+function gameCard(g) {
+  const el = document.createElement("div");
+  el.className = "game";
+  el.innerHTML = `
+    <div class="top">
+      <div class="art">${g.hasArt ? `<img alt="" src="/api/games/${g.id}/art?${Date.now()}">` : "?"}</div>
+      <div class="meta">
+        <div class="id">${esc(g.id)} <span class="badge ${g.built ? "built" : ""}">${g.built ? "built" : "not built"}</span></div>
+        <label>Name<input data-f="name" value="${esc(g.name)}"></label>
+      </div>
+    </div>
+    <div class="two">
+      <label>Author(s)<input data-f="author" value="${esc(g.author)}" placeholder="Name, Other name"></label>
+      <label>Version<input data-f="version" value="${esc(g.version)}"></label>
+    </div>
+    <label>Tags<input data-f="tags" value="${esc(g.tags.join(", "))}" placeholder="platformer, boss fights"></label>
+    <label>Description<textarea data-f="description">${esc(g.description)}</textarea></label>
+    <div class="actions">
+      <button class="primary" data-a="save">Save</button>
+      <button data-a="pick">Picture...</button>
+      <button data-a="rebuild">Rebuild</button>
+      <input type="file" accept="image/png" hidden>
+    </div>
+    <div class="note"></div>`;
+  const note = msg => el.querySelector(".note").textContent = msg;
+  const refreshArt = () => {
+    el.querySelector(".art").innerHTML = `<img alt="" src="/api/games/${g.id}/art?${Date.now()}">`;
+  };
+  el.querySelector('[data-a=save]').onclick = async () => {
+    const body = {};
+    el.querySelectorAll("[data-f]").forEach(i => body[i.dataset.f] = i.value);
+    try { await api(`/api/games/${g.id}/info`, { method: "POST", body: JSON.stringify(body) }); note("Saved. On the 3DS, choose Get games from PC to get it."); }
+    catch (e) { note("Could not save: " + e.message); }
+  };
+  const file = el.querySelector("input[type=file]");
+  el.querySelector('[data-a=pick]').onclick = () => file.click();
+  file.onchange = async () => {
+    if (!file.files[0]) return;
+    note("Setting picture...");
+    try {
+      const job = await api(`/api/games/${g.id}/art`, { method: "POST", body: await file.files[0].arrayBuffer() });
+      await watchJob(job, ok => { note(ok ? "Picture set." : "That picture could not be used (see the log)."); if (ok) refreshArt(); });
+    } catch (e) { note(e.message); }
+    file.value = "";
+  };
+  el.querySelector('[data-a=rebuild]').onclick = async () => {
+    note("Rebuilding (this can take a minute)...");
+    try {
+      const job = await api(`/api/games/${g.id}/rebuild`, { method: "POST" });
+      await watchJob(job, ok => { note(ok ? "Rebuilt." : "Build failed (see the log)."); loadGames(); });
+    } catch (e) { note(e.message); }
+  };
+  return el;
+}
+
+// ---- add a game ----------------------------------------------------------------------
+$("#addBtn").onclick = async () => {
+  const link = $("#link").value.trim();
+  if (!link) return $("#link").focus();
+  $("#addBtn").disabled = true;
+  try {
+    const job = await api("/api/add", { method: "POST", body: JSON.stringify({ link }) });
+    const ok = await watchJob(job);
+    if (ok) $("#link").value = "";
+    await loadGames();
+  } catch (e) {
+    $("#logTitle").style.display = "block";
+    $("#logTitle").textContent = e.message;
+    $("#logTitle").className = "fail";
+  }
+  $("#addBtn").disabled = false;
+};
+$("#link").addEventListener("keydown", e => { if (e.key === "Enter") $("#addBtn").click(); });
+
+function showSetup(setup) {
+  const needed = setup && !setup.ready;
+  $("#setup").style.display = needed ? "block" : "none";
+  document.querySelectorAll("#addBtn, [data-a=rebuild]").forEach(b => b.disabled = needed);
+  if (needed && setup.devkitPro && !setup.ready)
+    $("#setupNote").textContent = "devkitPro is installed, but not its 3DS part. Run the installer again and tick 3DS Development.";
+}
+$("#getInstaller").onclick = () => api("/api/open-installer-page", { method: "POST" });
+$("#checkAgain").onclick = async () => {
+  const s = await api("/api/status");
+  showSetup(s.setup);
+  if (s.setup.ready) loadGames();
+  else $("#setupNote").textContent = $("#setupNote").textContent || "Not found yet. Has the installer finished?";
+};
+
+api("/api/status").then(s => {
+  showSetup(s.setup);
+  $("#status").innerHTML = `3DS: in the library, choose <b>Get games from PC</b> to get games over Wi-Fi` +
+    (s.addresses.length ? ` &middot; this PC: ${s.addresses.map(esc).join(", ")}` : "");
+});
+loadGames();
+// The disclaimer must be clicked away every time the app opens.
+$("#agree").onclick = () => document.body.classList.add("agreed");
+$("#agree").focus();
+// Notice quickly if the app is closed while this page is open.
+setInterval(() => api("/api/status").catch(() => {}), 3000);
+</script>
+</body>
+</html>
