@@ -128,4 +128,5 @@ licences in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md): Microsoft MakeCode
 runtime and command-line tools (MIT), devkitPro's libctru, devkitARM and start-up
 files, and Node.js.
 
-This project's own code: see [LICENSE](LICENSE).
+This project's own code is under the MIT licence: see [LICENSE](LICENSE). Parts
+made by others keep their own licences.
